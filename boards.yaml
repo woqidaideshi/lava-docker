@@ -1,0 +1,60 @@
+---
+masters:
+  - name: master
+    host: local
+    webinterface_port: 8000
+    allowed_hosts: ['*']
+    users:
+      - name: admin
+        token: adminlavatoken
+        password: adminpwd
+        superuser: true
+        staff: true
+    tokens:
+      - username: admin
+        token: ff5ebf29-338b-469f-8f48-32aff3acbba1
+        description: kernelci-token
+
+slaves:
+  - name: lab-slave-1
+    host: local
+    remote_master: master
+    remote_user: admin
+    dispatcher_ip: 10.213.12.16
+    udp_port: 69
+    slave_port: 80
+    port_range: "61950-62000:61950-62000"
+    use_tftp: True
+    use_nfs: True
+    host_healthcheck: false
+  - name: lab-slave-2
+    host: local
+    remote_master: master
+    remote_user: admin
+    dispatcher_ip: 10.213.12.16
+    udp_port: 70
+    slave_port: 81
+    port_range: "62950-63000:62950-63000"
+    use_tftp: True
+    use_nfs: True
+    host_healthcheck: false
+
+boards:
+  - name: qemu-test1
+    type: qemu
+    slave: lab-slave-1
+  - name: qemu-test2
+    type: qemu
+    slave: lab-slave-2
+  - name: licheepi4a
+    type: sifive-unmatched
+    slave: lab-slave-1
+    connection_command: telnet 10.213.12.16 20000
+    pdu_generic:
+      hard_reset_command: /usr/local/bin/acme-cli -s 10.213.12.16 -d unmatched reset 4
+      power_off_command: /usr/local/bin/acme-cli -s 10.213.12.16 -d unmatched switch_off 4
+      power_on_command: /usr/local/bin/acme-cli -s 10.213.12.16 -d unmatched switch_on 4
+    uart:   
+      idvendor: 0x1a86
+      idproduct: 0x7523
+      devpath: "1"

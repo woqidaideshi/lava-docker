@@ -152,10 +152,11 @@ def main():
         dockcomposeymlpath = "output/%s/docker-compose.yml" % host
         dockcomp["services"][name] = {}
         dockcomp["services"][name]["hostname"] = name
-        dockcomp["services"][name]["ports"] = [ listen_address + ":" + str(webinterface_port) + ":80"]
+        dockcomp["services"][name]["ports"] =  [ str(webinterface_port) + ":80", "5555:5555", "5556:5556", "5500:5500" ] # [ listen_address + ":" + str(webinterface_port) + ":80"]
         dockcomp["services"][name]["volumes"] = [ "/boot:/boot", "/lib/modules:/lib/modules" ]
         dockcomp["services"][name]["build"] = {}
         dockcomp["services"][name]["build"]["context"] = name
+        dockcomp["services"][name]["restart"] = "always"
         if "build_args" in master:
             dockcomp["services"][name]["build"]["args"] = master['build_args']
         persistent_db = False
@@ -418,7 +419,7 @@ def main():
             "arch",
             "bind_dev", "build_args",
             "custom_volumes",
-            "devices", "dispatcher_ip", "default_slave",
+            "devices", "dispatcher_ip", "udp_port", "slave_port", "port_range", "default_slave",
             "extra_actions", "export_ser2net", "expose_ser2net", "expose_ports", "env",
             "host", "host_healthcheck",
             "loglevel", "lava-coordinator", "lava_worker_token",
@@ -456,12 +457,14 @@ def main():
             fp.close()
         dockcomp["services"][name] = {}
         dockcomp["services"][name]["hostname"] = name
-        dockcomp["services"][name]["dns_search"] = ""
+        # dockcomp["services"][name]["dns_search"] = ""
         dockcomp["services"][name]["ports"] = []
-        dockcomp["services"][name]["volumes"] = [ "/boot:/boot", "/lib/modules:/lib/modules" ]
+        dockcomp["services"][name]["volumes"] = [ "/boot:/boot", "/lib/modules:/lib/modules", "/home/xlab/workspaces/kernelci_inlinepath:/home/inlinepath" ]
         dockcomp["services"][name]["environment"] = {}
         dockcomp["services"][name]["build"] = {}
         dockcomp["services"][name]["build"]["context"] = name
+        dockcomp["services"][name]["restart"] = "always"
+        dockcomp["services"][name]["privileged"] = True
         if "build_args" in slave:
             dockcomp["services"][name]["build"]["args"] = slave['build_args']
         # insert here remote
@@ -609,9 +612,9 @@ def main():
             use_tftp = worker["use_tftp"]
         if use_tftp:
             if "dispatcher_ip" in worker:
-                dockcomp["services"][name]["ports"].append(worker["dispatcher_ip"] + ":69:69/udp")
+                dockcomp["services"][name]["ports"].append(worker["dispatcher_ip"] + ":" + str(worker["udp_port"]) + ":" + str(worker["udp_port"]) + "/udp")
             else:
-                dockcomp["services"][name]["ports"].append("69:69/udp")
+                dockcomp["services"][name]["ports"].append(str(worker["udp_port"]) + ":" + str(worker["udp_port"]) + "/udp")
         use_docker = False
         if "use_docker" in worker:
             use_docker = worker["use_docker"]
@@ -623,7 +626,7 @@ def main():
         if "use_nbd" in worker:
             use_nbd = worker["use_nbd"]
         if use_nbd:
-            dockcomp["services"][name]["ports"].append("61950-62000:61950-62000")
+            dockcomp["services"][name]["ports"].append(worker["port_range"])
             fp = open("%s/scripts/extra_actions" % workerdir, "a")
             # LAVA issue 585 need to remove /etc/nbd-server/config
             fp.write("apt-get -y install nbd-server && rm -f /etc/nbd-server/config\n")
@@ -633,7 +636,7 @@ def main():
         if "use_overlay_server" in worker:
             use_overlay_server = worker["use_overlay_server"]
         if use_overlay_server:
-            dockcomp["services"][name]["ports"].append("80:80")
+            dockcomp["services"][name]["ports"].append(str(worker["slave_port"]) + ":80")
         use_nfs = False
         if "use_nfs" in worker:
             use_nfs = worker["use_nfs"]
