@@ -38,6 +38,17 @@ slaves:
     use_tftp: True
     use_nfs: True
     host_healthcheck: false
+  - name: lab-slave-3
+    host: local
+    remote_master: master
+    remote_user: admin
+    dispatcher_ip: 10.213.12.16
+    udp_port: 71
+    slave_port: 82
+    port_range: "63950-64000:63950-64000"
+    use_tftp: True
+    use_nfs: True
+    host_healthcheck: false
 
 boards:
   - name: qemu-test1
@@ -46,6 +57,9 @@ boards:
   - name: qemu-test2
     type: qemu
     slave: lab-slave-2
+  - name: qemu-test3
+    type: qemu
+    slave: lab-slave-3
   - name: licheepi4a
     type: sifive-unmatched
     slave: lab-slave-1
